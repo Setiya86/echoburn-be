@@ -30,6 +30,47 @@ class RiwayatController extends Controller
     }
 
     /**
+     * BULK UPDATE - Mengubah status banyak data berdasarkan rentang waktu.
+     */
+    public function bulkUpdateStatus(Request $request)
+    {
+        $request->validate([
+            'startDate' => 'required|date',
+            'startTime' => 'required', // Format H:i
+            'endDate'   => 'required|date|after_or_equal:startDate',
+            'endTime'   => 'required',
+            'status'    => 'required|in:pending,proses,selesai',
+        ]);
+
+        // Menggabungkan tanggal dan jam menjadi format Timestamp
+        $startDateTime = $request->startDate . ' ' . $request->startTime;
+        $endDateTime   = $request->endDate . ' ' . $request->endTime;
+
+        DB::beginTransaction();
+        try {
+            // Update semua aktivitas milik user yang login dalam rentang waktu tersebut
+            $affectedRows = Aktivitas::where('user_id', auth()->id())
+                ->whereBetween('waktu_pencatatan', [$startDateTime, $endDateTime])
+                ->update(['status_proses' => $request->status]);
+
+            DB::commit();
+
+            if ($affectedRows === 0) {
+                return response()->json(['message' => 'Tidak ada data ditemukan pada rentang waktu tersebut.'], 404);
+            }
+
+            return response()->json([
+                'message' => "Berhasil mengupdate {$affectedRows} data status menjadi {$request->status}.",
+                'affected_rows' => $affectedRows
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Gagal update status', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * CREATE (Store) - Mencatat Aktivitas, Pembakaran, Update Saldo Sampah, DAN Mencatat Keuangan.
      */
     public function store(Request $request)

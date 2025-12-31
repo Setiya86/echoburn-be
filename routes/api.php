@@ -8,6 +8,10 @@ use App\Http\Controllers\DaftarAnggotaController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\RiwayatController; 
 use App\Http\Controllers\PembayaranController; 
+use App\Http\Controllers\PredictionController;
+use App\Http\Controllers\DashboardController;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -20,6 +24,7 @@ use App\Http\Controllers\PembayaranController;
 // ======================
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/public/stats', [DashboardController::class, 'publicStats']);
 
 
 // ======================
@@ -51,8 +56,11 @@ Route::middleware('auth:api')->group(function () {
     
     // --- 2.4 Transaksi & Riwayat ---
     Route::apiResource('riwayat', RiwayatController::class); // Pembakaran Sampah
+    // TAMBAHKAN INI (Route Custom untuk Bulk Update)
+    Route::post('/riwayat/bulk-update', [RiwayatController::class, 'bulkUpdateStatus']);
     Route::apiResource('pembayaran', PembayaranController::class); // Keuangan
     
     // --- 2.5 Laporan ---
-    Route::apiResource('laporan', LaporanController::class);
+    Route::get('/predict-growth', [PredictionController::class, 'predictGrowth']);
+    Route::get('/dashboard-stats', [DashboardController::class, 'index']);
 });
